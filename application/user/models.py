@@ -1,8 +1,8 @@
 import os
 from werkzeug.security import generate_password_hash, check_password_hash
-from flask import session
+from flask import session, current_app
 
-from application.extensions import db
+from ..extensions import db
 
 
 class Role(db.Model):
@@ -51,6 +51,10 @@ class User(db.Model):
     @property
     def user_roles(self):
         return [user_role.role.role_name for user_role in self.roles]
+    
+    @property
+    def menus(self):
+        return current_app.config['MENUS']
 
 
 class UserRole(db.Model):

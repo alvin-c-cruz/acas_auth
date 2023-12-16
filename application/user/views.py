@@ -5,7 +5,7 @@ from functools import wraps
 from .models import User, Role, UserRole
 from .forms import LoginForm, UserForm
 
-from application.extensions import db
+from .. extensions import db
 
 
 bp = Blueprint("user", __name__, template_folder="pages", url_prefix="/user")
@@ -94,7 +94,7 @@ def user_active():
 @bp.route("/login", methods=["POST", "GET"])
 def login():
     if current_user.is_authenticated:
-        return redirect(url_for('main.home'))
+        return redirect("/")
     
     if request.method == "POST":
         form = LoginForm()
@@ -106,26 +106,13 @@ def login():
                 if user.check_pass_word(form.pass_word):
                     login_user(user)
                     flash(f"Welcome {user.user_name}.", category="success")
-                    return redirect(url_for("main.home"))
+                    return redirect("/")
                 
             flash("Invalid username / password.", category="error")
     else:
         form = LoginForm()
     
-    from application import blueprints
-    role_names = []
-    module_names = dir(blueprints)
-    for module_name in module_names:
-        if hasattr(getattr(blueprints, module_name),"bp"):
-            if not module_name in ("main",):
-                role_names.append(module_name)
-                    
-    for role_name in role_names:
-        role =Role.query.filter_by(role_name=role_name).first()
-        if not role:
-            role = Role(role_name=role_name)
-            db.session.add(role)
-            db.session.commit()
+    check_roles()
     
     context = {
         "form": form,
@@ -158,18 +145,7 @@ def register():
             
             if form.user_name == "admin":
                 if not Role.query.all():
-                    from application import blueprints
-                    role_names = ["user"]
-                    module_names = dir(blueprints)
-                    for module_name in module_names:
-                        if hasattr(getattr(blueprints, module_name),"bp"):
-                            if not module_name in ("user", "main"):
-                                role_names.append(module_name)
-                    
-                    for role_name in role_names:
-                        role = Role(role_name=role_name)
-                        db.session.add(role)
-                        db.session.commit()
+                    check_roles()
                 
                 role = Role.query.filter_by(role_name="user").first()
                                     
@@ -206,7 +182,7 @@ def logout():
 @bp.route("/inactive")
 def inactive():
     if current_user.is_active():
-        return redirect(url_for("main.home"))
+        return redirect("/")
     
     return render_template("user/inactive.html")
 
@@ -250,4 +226,18 @@ def remove_role():
         db.session.commit()
     
     return redirect(url_for('user.user_list'))
-    
+
+
+def check_roles():
+    from .. extensions import installed_apps
+    role_names = ['user']
+    for module in installed_apps:
+        if hasattr(module,"menu_label"):
+            role_names.append(getattr(module,"menu_label")[2])
+                    
+    for role_name in role_names:
+        role = Role.query.filter_by(role_name=role_name).first()
+        if not role:
+            role = Role(role_name=role_name)
+            db.session.add(role)
+            db.session.commit()

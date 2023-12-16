@@ -1,19 +1,16 @@
-from flask import Flask, request, redirect, url_for, abort
-from flask_migrate import Migrate
+from flask import Flask, request, redirect, url_for, abort, g
 from flask_login import LoginManager
 from pathlib import Path
 from http import HTTPStatus
 
-from . import blueprints
-from . extensions import db, bcrypt, mail, migrate
+from . import user
+from . extensions import db, bcrypt, mail, migrate, installed_apps
 
+installed_apps.append(user)
 
 def create_app():
     app = Flask(__name__, instance_relative_config=True)
-    app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///data.db'  
-    app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-    app.config['SECRET_KEY'] = '4359618c434ed9d52b99638a77e0b4a5'
-    app.config['DEBUG'] = True
+    app.config.from_pyfile('config.py', silent=True)
 
     instance_path = Path(app.instance_path)
     parent_directory = Path(instance_path.parent)
@@ -29,7 +26,7 @@ def create_app():
 
     @login_manager.user_loader
     def load_user(user_id):
-        return blueprints.user.User.query.get(user_id)
+        return user.User.query.get(user_id)
 
     @login_manager.unauthorized_handler
     def unauthorized():
@@ -39,12 +36,13 @@ def create_app():
     
     
     # Register Blueprints
-    bps = [
-        getattr(getattr(blueprints, module), "bp") 
-        for module in dir(blueprints) if hasattr(getattr(blueprints, module),"bp")
-        ]
-    for blueprint in bps:
-        app.register_blueprint(blueprint)
+    menu_list = []
+    for module in installed_apps:
+        app.register_blueprint(getattr(module, "bp"))
+        if hasattr(module, "menu_label"):
+            menu_list.append(getattr(module, "menu_label"))
+
+    app.config['MENUS'] = menu_list
 
     # Initialize the database
     bcrypt.init_app(app)
