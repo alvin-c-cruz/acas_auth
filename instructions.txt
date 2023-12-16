@@ -1,3 +1,7 @@
 pip install twine
+
 python setup.py sdist bdist_wheel
 twine upload dist/*
+
+
+pypi-AgEIcHlwaS5vcmcCJDdkMGY5ODEzLWIxZTItNGNjMS1hZGUwLTg0YWY0NTc5MWVkNAACKlszLCI1Yzg4ZjNlZS1lOGJjLTQ1MWEtYWViYi04MjJkYjk0OTE2NWUiXQAABiD83yLEGatlplAf5T6BfF2FJODUtP6za3CvriNuxSuZgQ
