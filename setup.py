@@ -10,4 +10,5 @@ setup(
         "Flask-Login==0.6.3",
         "Flask-Mail==0.9.1",
         "Flask-Migrate==4.0.5"
-    ],
+    ]
+)
