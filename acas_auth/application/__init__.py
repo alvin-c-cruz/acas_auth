@@ -10,7 +10,7 @@ installed_apps.append(user)
 
 def create_app(instance_folder):
     app = Flask(__name__, instance_path=instance_folder)
-    app.config.from_pyfile('config.py', silent=True)
+    app.config.from_pyfile(instance_folder / 'config.py')
 
     instance_path = Path(app.instance_path)
     parent_directory = Path(instance_path.parent)
