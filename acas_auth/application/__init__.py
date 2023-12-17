@@ -8,9 +8,10 @@ from . extensions import db, bcrypt, mail, migrate, installed_apps
 
 installed_apps.append(user)
 
-def create_app(instance_folder):
+def create_app(instance_folder, template_folder, blueprint_groups):
     app = Flask(__name__, instance_path=instance_folder)
     app.config.from_pyfile(instance_folder / 'config.py')
+    app.template_folder = template_folder
 
     instance_path = Path(app.instance_path)
     parent_directory = Path(instance_path.parent)
@@ -36,6 +37,12 @@ def create_app(instance_folder):
     
     
     # Register Blueprints
+    for group in blueprint_groups:
+        for module_name in dir(group):
+            module = getattr(group, module_name)
+            if hasattr(module, "bp"):
+                installed_apps.append(module)
+
     menu_list = []
     for module in installed_apps:
         app.register_blueprint(getattr(module, "bp"))
@@ -43,6 +50,8 @@ def create_app(instance_folder):
             menu_list.append(getattr(module, "menu_label"))
 
     app.config['MENUS'] = menu_list
+
+
 
     # Initialize the database
     bcrypt.init_app(app)
